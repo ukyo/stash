@@ -121,6 +121,12 @@
 
 	// Stash
 	win.stash = {
+		// returns all local storage keys
+		keys: function () {
+			var i, n, arr = [];
+			for(i = 0, n = ls.length; i < n; i++) arr.push(ls.key(i));
+			return arr;  
+		},
 		// returns whether a storage item exists or not
 		has: function () {
 			var args = [].concat.apply([], arguments), arg, i = -1;
@@ -130,19 +136,20 @@
 		},
 		// returns a local storage item
 		get: function (attr) {
-			var args = [].concat.apply([], arguments), arg, key, i = -1, items = {}, items_, e;
+			var args = [].concat.apply([], arguments), arg, key, keys, i = -1, items = {}, items_, e;
 			//
 			if (args.length === 1) {
 				if (isType(RegExp, attr)) {
-					while((key = ls.key(++i))) if (attr.test(key)) items[key] = unstringify(ls[key]);
+					keys = stash.keys();
+					while ((key = keys[++i])) if (attr.test(key)) items[key] = unstringify(ls[key]);
 					return items;
 				}
 				return unstringify(ls[attr]);
 			}
 			while ((arg = args[++i])) {
-				var items_ = this.get(arg);
-				if (isType(RegExp, arg)) for (e in items_) if (items_.hasOwnProperty(e)) items[e] = items_[e];
-				else items[arg] = items_;
+				var items_ = stash.get(arg);
+				if (!isType(RegExp, arg)) items[arg] = items_;
+				else for (e in items_) if (items_.hasOwnProperty(e)) items[e] = items_[e];
 			}
 			return items;
 		},
@@ -174,11 +181,14 @@
 		},
 		// removals a local storage item
 		cut: function (attr) {
-			var args = [].concat.apply([], arguments), arg, i = -1, e;
+			var args = [].concat.apply([], arguments), arg, i = -1, j, keys, e;
 			//
 			while ((arg = args[++i])) {
-				var j = -1;
-				if (isType(RegExp, arg)) while ((e = ls.key(++j))) if (arg.test(e)) delete ls[e];
+				j = -1;
+				if (isType(RegExp, arg)) {
+					keys = stash.keys();
+					while((e = keys[++j])) if (arg.test(e)) delete ls[e];
+				}
 				else delete ls[arg];
 			}
 			return true;
