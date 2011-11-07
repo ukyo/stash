@@ -130,10 +130,20 @@
 		},
 		// returns a local storage item
 		get: function (attr) {
-			var args = [].concat.apply([], arguments), arg, i = -1, items = {};
+			var args = [].concat.apply([], arguments), arg, key, i = -1, items = {}, items_, e;
 			//
-			if (args.length === 1) return unstringify(ls[attr]);
-			while ((arg = args[++i])) items[arg] = unstringify(ls[arg]);
+			if (args.length === 1) {
+				if (isType(RegExp, attr)) {
+					while((key = ls.key(++i))) if (attr.test(key)) items[key] = unstringify(ls[key]);
+					return items;
+				}
+				return unstringify(ls[attr]);
+			}
+			while ((arg = args[++i])) {
+				var items_ = this.get(arg);
+				if (isType(RegExp, arg)) for (e in items_) if (items_.hasOwnProperty(e)) items[e] = items_[e];
+				else items[arg] = items_;
+			}
 			return items;
 		},
 		// returns all local storage items
@@ -164,9 +174,13 @@
 		},
 		// removals a local storage item
 		cut: function (attr) {
-			var args = [].concat.apply([], arguments), arg, i = -1;
+			var args = [].concat.apply([], arguments), arg, i = -1, e;
 			//
-			while ((arg = args[++i])) delete ls[arg];
+			while ((arg = args[++i])) {
+				var j = -1;
+				if (isType(RegExp, arg)) while ((e = ls.key(++j))) if (arg.test(e)) delete ls[e];
+				else delete ls[arg];
+			}
 			return true;
 		},
 		// removes all items from local storage
